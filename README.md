@@ -40,6 +40,18 @@ tests
 docs
 ```
 
+## Hooks
+
+Two checks run on every commit. One blocks credentials, the other catches the
+writing habits I do not want in a public repo. Install them after cloning:
+
+```
+./scripts/install-hooks.sh
+```
+
+Both scripts also run standalone if you want to scan everything rather than just
+what is staged.
+
 ## License
 
 MIT
