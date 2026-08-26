@@ -40,6 +40,29 @@ tests
 docs
 ```
 
+## Running it
+
+Docker and Docker Compose are the only requirements so far.
+
+```
+cp .env.example .env
+make up
+make logs
+```
+
+That brings up Qdrant and LocalAI. LocalAI pulls its model on first start, which
+takes a while and a few GB, so the healthcheck is given a long start period
+before compose decides it has failed.
+
+Without make, the same thing:
+
+```
+docker compose -f deploy/compose/docker-compose.yml up -d
+```
+
+The embeddings service, the API, and the UI are not in the compose file yet. They
+go in as they get built.
+
 ## Hooks
 
 Two checks run on every commit. One blocks credentials, the other catches the
