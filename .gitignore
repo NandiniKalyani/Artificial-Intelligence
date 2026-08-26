@@ -1,26 +1,65 @@
-# Private notes — never publish
-imp-notes/
-docs/
-notes/
-private/
-*.private.md
+# ---------------------------------------------------------------------------
+# Everything private lives in one folder. If it is in _private, it never
+# reaches GitHub. Reference course code, interview prep, build plan, notes.
+# ---------------------------------------------------------------------------
+_private/
 
-# Secrets
+# Process files that would reveal how the repo was built
+CLAUDE.md
+.claude/
+
+# ---------------------------------------------------------------------------
+# Secrets. Nothing below this line should ever exist in a commit.
+# ---------------------------------------------------------------------------
 .env
 .env.*
+!.env.example
 *.key
 *.pem
+*.p12
+*.pfx
 credentials.json
+service-account*.json
+secrets.yaml
+secrets.yml
+*_rsa
+*_ed25519
+.aws/
+.azure/
+kubeconfig
+*.kubeconfig
 
+# ---------------------------------------------------------------------------
+# Models and data. Far too big for git, and the corpus is not mine to publish.
+# ---------------------------------------------------------------------------
+models/
+data/
+corpus/
+*.gguf
+*.safetensors
+*.bin
+qdrant_storage/
+
+# ---------------------------------------------------------------------------
 # Python
+# ---------------------------------------------------------------------------
 .venv/
 venv/
 __pycache__/
 *.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
 .ipynb_checkpoints/
 
-# Editors / OS
+# ---------------------------------------------------------------------------
+# Editors and OS
+# ---------------------------------------------------------------------------
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+*.swp
