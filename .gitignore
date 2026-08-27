@@ -35,6 +35,14 @@ kubeconfig
 models/
 data/
 corpus/
+
+# the localai model dir is the exception. The yaml is config and belongs in git,
+# the gguf it downloads next to it does not. The directory has to be un-ignored
+# first, git will not look inside an excluded one
+!deploy/localai/models/
+deploy/localai/models/*
+!deploy/localai/models/*.yaml
+
 *.gguf
 *.safetensors
 *.bin
