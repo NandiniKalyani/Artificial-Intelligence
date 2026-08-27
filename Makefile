@@ -1,12 +1,15 @@
 COMPOSE = docker compose -f deploy/compose/docker-compose.yml
 
-.PHONY: up down logs ps restart clean check
+.PHONY: up down logs ps restart clean check wait
 
 up:
 	$(COMPOSE) up -d
 
 down:
 	$(COMPOSE) down
+
+wait:
+	./scripts/wait-for-stack.sh
 
 logs:
 	$(COMPOSE) logs -f --tail=100
