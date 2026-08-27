@@ -50,7 +50,10 @@ make up
 make logs
 ```
 
-That brings up Qdrant and LocalAI. LocalAI pulls its model on first start, which
+That brings up Qdrant and LocalAI. `make wait` blocks until both can actually
+serve a request, which on a cold start means waiting for the model download.
+
+ LocalAI pulls its model on first start, which
 takes a while and a few GB, so the healthcheck is given a long start period
 before compose decides it has failed.
 
