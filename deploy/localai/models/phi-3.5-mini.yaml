@@ -1,0 +1,45 @@
+# Phi-3.5-mini, 3.8B parameters, running on CPU through llama.cpp.
+# Microsoft's model, small enough to answer in a few seconds on a laptop and
+# still good enough to summarise a documentation passage, which is all this
+# system asks of it. Anything larger than roughly 4B is painful without a GPU.
+
+name: phi-3.5-mini
+
+backend: llama-cpp
+context_size: 4096
+gpu_layers: 0
+
+# one thread per physical core, not per logical thread. Oversubscribing makes
+# it slower, the cores end up fighting over the same memory bandwidth
+threads: 4
+
+# tokens processed per pass during prompt ingestion. 64 is the CPU sweet spot,
+# 128 was not faster here and used noticeably more memory
+batch_size: 64
+f16: true
+
+parameters:
+  model: phi-3.5-mini-instruct-Q4_K_M.gguf
+
+  temperature: 0.2
+
+# without this the roles are never rendered and Phi treats the whole thing as
+# plain text, so it answers and then carries on inventing its own questions
+template:
+  chat_message: |
+    <|{{.RoleName}}|>
+    {{.Content}}<|end|>
+  chat: |
+    {{.Input}}
+    <|assistant|>
+
+# these belong at the top level, not under parameters. Nested they are silently
+# ignored and the model runs on emitting blank lines until max_tokens stops it
+stopwords:
+  - "<|end|>"
+  - "<|user|>"
+  - "<|system|>"
+
+download_files:
+  - filename: phi-3.5-mini-instruct-Q4_K_M.gguf
+    uri: https://huggingface.co/bartowski/Phi-3.5-mini-instruct-GGUF/resolve/main/Phi-3.5-mini-instruct-Q4_K_M.gguf
