@@ -33,14 +33,22 @@ services:
     volumes:
       - ../localai/models:/models:cached
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/v1/models"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      # the first run downloads a few GB of model, so give it a long runway
-      # before compose starts calling it unhealthy
-      start_period: 30m
-      start_interval: 10s
+      # /v1/models answers as soon as the server is listening, which is about a
+      # minute before the model is loaded and can generate anything. So ask it
+      # for one token instead. Costs an inference, tells the truth
+      test:
+        - CMD-SHELL
+        - >-
+          curl -sf -m 120 http://localhost:8080/v1/chat/completions
+          -H 'Content-Type: application/json'
+          -d '{"model":"phi-3.5-mini","messages":[{"role":"user","content":"ok"}],"max_tokens":1}'
+          | grep -q choices
+      interval: 5m
+      timeout: 130s
+      retries: 3
+      # first run downloads 2.2GB before it can even start loading
+      start_period: 45m
+      start_interval: 20s
 
   # embeddings:   issue 8, sentence-transformers behind a small HTTP API
   # api:          issue 16, ingestion and chat
