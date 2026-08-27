@@ -40,6 +40,9 @@ corpus/
 *.bin
 qdrant_storage/
 
+# model weights land next to their config when localai downloads them
+deploy/localai/models/*.gguf
+
 # ---------------------------------------------------------------------------
 # Python
 # ---------------------------------------------------------------------------
