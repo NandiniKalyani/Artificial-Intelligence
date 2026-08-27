@@ -37,3 +37,21 @@ to be tight when retrieval is real, this is the number to raise first.
 `deploy/localai/models/` holds the YAML and is committed. LocalAI downloads the
 `.gguf` into the same directory, which is gitignored. Keeps the mount to one
 path and keeps a 2.4GB file out of git.
+
+## The healthcheck runs a real inference
+
+The obvious healthcheck is `GET /v1/models`, which is what I started with. It
+answers within seconds of the container starting and stays wrong for about
+another two minutes, because that is when the model is actually being read off
+disk and into memory. A healthcheck that goes green while the thing cannot
+answer is worse than none, since compose will happily start dependents against
+it.
+
+So the check asks for a single token and looks for `choices` in the reply. It
+costs one real inference, which is why the interval is 5 minutes rather than the
+usual 30 seconds. Once the model is loaded that call is quick, so the ongoing
+cost is small.
+
+The alternative was a startup probe separate from the liveness probe, which is
+what I would do in Kubernetes. Compose has no such split, only `start_period`,
+so this is the closest equivalent.
