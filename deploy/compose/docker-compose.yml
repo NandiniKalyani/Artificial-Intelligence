@@ -31,7 +31,7 @@ services:
       - MODELS_PATH=/models
       - THREADS=${LOCALAI_THREADS:-4}
     volumes:
-      - ../../models:/models:cached
+      - ../localai/models:/models:cached
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/v1/models"]
       interval: 30s
