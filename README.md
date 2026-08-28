@@ -66,6 +66,24 @@ docker compose -f deploy/compose/docker-compose.yml up -d
 The embeddings service, the API, and the UI are not in the compose file yet. They
 go in as they get built.
 
+## Asking it something
+
+```
+cd services/api
+pip install -r requirements.txt
+python -m ragops.chat
+```
+
+Or one question and out:
+
+```
+python -m ragops.chat "what is a site collection"
+```
+
+There is no retrieval yet, so it is answering from the model's own weights. That
+is the next phase. This exists to prove the stack works before anything is built
+on it.
+
 ## Hooks
 
 Two checks run on every commit. One blocks credentials, the other catches the
