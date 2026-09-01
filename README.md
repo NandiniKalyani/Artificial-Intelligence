@@ -77,6 +77,17 @@ with `{"texts": [...]}`, up to 256 at a time. Embedding 100 chunks that way took
 3.5s against 26s one at a time. `/health` reports ok only once the model
 is loaded, not as soon as the port opens.
 
+## Vector store
+
+```
+cd services/api
+python -m ragops.store           # creates the collection if it is missing
+python -m ragops.store --reset   # drops it and starts again
+```
+
+One collection, 384 dimensions, cosine distance, with an index on `doc_id` so a
+single document can be searched without scanning everything.
+
 ## Asking it something
 
 ```

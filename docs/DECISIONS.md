@@ -99,3 +99,28 @@ keeps memory flat while still filling the CPU.
 Empty strings are rejected across the whole list rather than skipped. Silently
 dropping one would misalign the returned vectors with the chunks that were sent,
 which is the sort of bug that only shows up as bad search results weeks later.
+
+## One collection, not one per document
+
+A collection per document is tempting: deleting a document is a single drop, and
+searching one document needs no filter at all.
+
+It falls apart everywhere else. Asking a question across the whole corpus means
+querying every collection and merging the scores yourself, which is exactly the
+work the vector store exists to do. Qdrant also holds an index per collection,
+so a few hundred documents becomes a few hundred indexes.
+
+So: one collection called `docs`, with `doc_id` in the payload and a keyword
+index on it. Searching one document is a filter, searching everything is the
+default, and deleting a document is a delete by filter rather than a drop. The
+filter costs a little, and without the index it would cost a lot more, which is
+why the index goes in at creation rather than being added when it starts to
+hurt.
+
+## Cosine, not dot product
+
+The embeddings come back normalised, so cosine and dot product rank identically
+and there is no measurable difference today. Cosine is still what the collection
+is configured with, because it says what is meant. If a future model returns
+unnormalised vectors, dot product would silently start ranking by length as well
+as direction, and nothing would look broken.
