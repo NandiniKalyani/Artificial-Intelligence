@@ -72,7 +72,9 @@ go in as they get built.
 curl -s http://localhost:8082/embed -H 'Content-Type: application/json'   -d '{"text":"A site collection contains one or more SharePoint sites."}'
 ```
 
-Returns a normalised 384 value vector. `/health` reports ok only once the model
+Returns a normalised 384 value vector. For more than one, `POST /embed/batch`
+with `{"texts": [...]}`, up to 256 at a time. Embedding 100 chunks that way took
+3.5s against 26s one at a time. `/health` reports ok only once the model
 is loaded, not as soon as the port opens.
 
 ## Asking it something
