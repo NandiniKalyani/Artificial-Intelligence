@@ -50,7 +50,21 @@ services:
       start_period: 45m
       start_interval: 20s
 
-  # embeddings:   issue 8, sentence-transformers behind a small HTTP API
+  embeddings:
+    build:
+      context: ../../services/embeddings
+    ports:
+      - "${EMBEDDINGS_PORT:-8082}:8000"
+    healthcheck:
+      # /health only reports ok once the model is loaded and has embedded
+      # something, so this does not need to do the embedding itself
+      test: ["CMD-SHELL", "python -c \"import urllib.request;urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 2m
+      start_interval: 5s
+
   # api:          issue 16, ingestion and chat
   # frontend:     issue 23, chat UI
 

@@ -9,6 +9,7 @@ set -uo pipefail
 DEADLINE=$(( $(date +%s) + ${1:-3600} ))
 QDRANT="http://localhost:${QDRANT_HTTP_PORT:-6333}"
 LOCALAI="http://localhost:${LOCALAI_PORT:-8081}"
+EMBEDDINGS="http://localhost:${EMBEDDINGS_PORT:-8082}"
 
 waiting_for() {
 	printf '%s ' "$1"
@@ -23,6 +24,12 @@ while :; do
 
 	if ! curl -sf -m 5 "$QDRANT/readyz" >/dev/null 2>&1; then
 		waiting_for qdrant
+		sleep 5
+		continue
+	fi
+
+	if ! curl -sf -m 5 "$EMBEDDINGS/health" >/dev/null 2>&1; then
+		waiting_for embeddings
 		sleep 5
 		continue
 	fi

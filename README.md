@@ -66,6 +66,15 @@ docker compose -f deploy/compose/docker-compose.yml up -d
 The embeddings service, the API, and the UI are not in the compose file yet. They
 go in as they get built.
 
+## Embeddings
+
+```
+curl -s http://localhost:8082/embed -H 'Content-Type: application/json'   -d '{"text":"A site collection contains one or more SharePoint sites."}'
+```
+
+Returns a normalised 384 value vector. `/health` reports ok only once the model
+is loaded, not as soon as the port opens.
+
 ## Asking it something
 
 ```
