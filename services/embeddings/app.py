@@ -48,14 +48,41 @@ class EmbedResponse(BaseModel):
     embedding: list[float]
 
 
+class BatchRequest(BaseModel):
+    # 256 is arbitrary but it has to be something. A whole document's chunks in
+    # one request would hold the event loop for a long time and give the caller
+    # no progress at all
+    texts: list[str] = Field(min_length=1, max_length=256)
+
+
+class BatchResponse(BaseModel):
+    embeddings: list[list[float]]
+
+
 @app.post("/embed", response_model=EmbedResponse)
 def embed(request: EmbedRequest):
-    model = state["model"]
-    if model is None:
-        raise HTTPException(status_code=503, detail="model is still loading")
-
+    model = _model()
     vector = model.encode(request.text, normalize_embeddings=True)
     return {"embedding": vector.tolist()}
+
+
+@app.post("/embed/batch", response_model=BatchResponse)
+def embed_batch(request: BatchRequest):
+    model = _model()
+
+    if any(not text.strip() for text in request.texts):
+        raise HTTPException(status_code=422, detail="one of the texts is empty")
+
+    # one encode call, not one per text. The model batches internally and that
+    # is where the time goes, not in the HTTP round trip
+    vectors = model.encode(request.texts, normalize_embeddings=True, batch_size=32)
+    return {"embeddings": [v.tolist() for v in vectors]}
+
+
+def _model():
+    if state["model"] is None:
+        raise HTTPException(status_code=503, detail="model is still loading")
+    return state["model"]
 
 
 @app.get("/health")
