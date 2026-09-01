@@ -55,3 +55,31 @@ cost is small.
 The alternative was a startup probe separate from the liveness probe, which is
 what I would do in Kubernetes. Compose has no such split, only `start_period`,
 so this is the closest equivalent.
+
+## Embeddings are a separate service, not an import
+
+The API could import sentence-transformers and call it directly. That ties the
+API's memory footprint and startup time to a machine learning model, and means
+restarting the API to change a route reloads the model as well.
+
+Behind an HTTP boundary the model loads once, restarts on its own, and can be
+swapped for a different one without touching the API. The cost is a network hop
+per embedding, which is why the batch endpoint in the next issue matters.
+
+## The model is baked into the image
+
+The alternative is downloading it on first start into a mounted cache volume.
+That makes a clean clone behave differently from a warm machine, and adds a
+volume whose contents have to stay in step with the code.
+
+MiniLM is about 90MB, so it goes in the image. Builds are slower and the image
+is bigger, starts are fast and offline. Worth revisiting if the model ever gets
+large enough that the image becomes awkward to move around.
+
+## The embeddings healthcheck does not embed
+
+The LocalAI healthcheck runs a real inference because loading takes over two
+minutes and there is no cheaper way to know it is ready. MiniLM loads in
+seconds, and `/health` already reports ok only after the model has embedded a
+string at startup. Repeating that work every 30 seconds forever would buy
+nothing.
