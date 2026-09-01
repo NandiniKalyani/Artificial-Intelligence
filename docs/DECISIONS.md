@@ -83,3 +83,19 @@ minutes and there is no cheaper way to know it is ready. MiniLM loads in
 seconds, and `/health` already reports ok only after the model has embedded a
 string at startup. Repeating that work every 30 seconds forever would buy
 nothing.
+
+## Batch embedding, and why 256
+
+Ingesting a document means embedding hundreds of chunks. One at a time, 100
+chunks took 26.2s. In a single batch call it took 3.5s, so 7.5 times quicker.
+Almost all of that is the model batching internally rather than the HTTP round
+trip being avoided.
+
+The cap is 256 texts per request. It has to be something: a whole large document
+in one call would hold the request open for a long time and give the caller no
+progress at all. Internally `encode` uses a batch size of 32, which is what
+keeps memory flat while still filling the CPU.
+
+Empty strings are rejected across the whole list rather than skipped. Silently
+dropping one would misalign the returned vectors with the chunks that were sent,
+which is the sort of bug that only shows up as bad search results weeks later.
