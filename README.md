@@ -88,6 +88,18 @@ python -m ragops.store --reset   # drops it and starts again
 One collection, 384 dimensions, cosine distance, with an index on `doc_id` so a
 single document can be searched without scanning everything.
 
+## Does search actually work
+
+```
+cd services/api
+python -m ragops.roundtrip
+```
+
+Stores six SharePoint admin passages and asks four questions that share almost
+no words with them. Right now the correct passage is top for two of the four,
+and in the top three for all four. The output shows where the expected passage
+ranked when it was not first.
+
 ## Asking it something
 
 ```
