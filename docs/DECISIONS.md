@@ -124,3 +124,35 @@ and there is no measurable difference today. Cosine is still what the collection
 is configured with, because it says what is meant. If a future model returns
 unnormalised vectors, dot product would silently start ranking by length as well
 as direction, and nothing would look broken.
+
+## Point ids are derived, not random
+
+A point id of `uuid5(doc_id + chunk position)` means ingesting the same document
+twice overwrites its chunks rather than storing a second copy of every one. With
+random ids I would have to delete the document first every time, and forgetting
+that once would leave duplicates that quietly skew every search afterwards.
+
+## The passage text is stored in the payload
+
+Qdrant returns ids and scores. An id and a score tell you nothing about whether
+retrieval worked, so the text goes in the payload next to the vector and comes
+back with the hit. It costs storage, and it is the difference between debugging
+retrieval and guessing at it.
+
+## First retrieval numbers, measured on six passages
+
+Four questions, worded to avoid the vocabulary of the passages. The correct
+passage came first for two of them and was in the top three for all four.
+
+The two misses are worth keeping. "Why can this person still see the file after I
+removed them from the group" returned the sharing links passage at 0.241, with
+permission inheritance third. Nothing scored well, which suggests the passage
+that answers it does not contain the words the question implies.
+
+"How do I stop staff sending documents to people outside the company" returned
+sharing links first at 0.366 and external sharing second. That is arguably a
+better answer than the one I expected, since sharing links are how documents
+leave the organisation. My label was the debatable part, not the retrieval.
+
+Six passages is too small to conclude anything. It does say the round trip works
+and gives a baseline to compare against once chunking is real.
