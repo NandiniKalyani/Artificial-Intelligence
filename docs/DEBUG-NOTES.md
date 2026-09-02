@@ -6,7 +6,9 @@ the wrong guesses stay in.
 ## The model never stops talking
 
 **Symptom.** First real request to LocalAI came back with a correct one sentence
-answer followed by about ninety blank lines. `completion_tokens` was exactly
+answer, "A SharePoint site collection is a group of related sites that share
+common features, settings, and permissions within Microsoft SharePoint", followed
+by about ninety blank lines. `completion_tokens` was exactly
 120, which was the `max_tokens` I had sent. Same on every request. So it was
 never finishing, it was being cut off.
 
@@ -33,7 +35,10 @@ llama.cpp the raw text with no `<|system|>`, `<|user|>` or `<|assistant|>`
 markers, so Phi had no reason to think a turn had ended and just kept writing.
 Adding the template to the YAML fixed it in one restart.
 
-**Fix.** Chat template in the model config. Kept the request level stops and the
+**Fix.** Chat template in the model config. Same question afterwards: "A
+SharePoint site collection is a grouping of SharePoint sites that share common
+features, permissions, and administration settings within a single site
+collection." One sentence, nothing after it. Kept the request level stops and the
 newline trimming in the client as well, they are cheap and the model is not the
 only thing that can send junk back.
 

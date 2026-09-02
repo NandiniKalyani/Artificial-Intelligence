@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Catches the writing tells listed in _private/process/writing-style.md
+# Catches the writing habits I do not want in a public repo.
 # Run before every push. Also wired in as a pre-commit hook.
 #
 #   ./scripts/check-style.sh          check tracked files
@@ -15,8 +15,8 @@ else
 	FILES=$(git ls-files)
 fi
 
-# this script quotes the bad patterns on purpose, so skip it and the local notes
-EXEMPT='^(_private/|scripts/check-style\.sh|CLAUDE\.md)'
+# this script quotes the bad patterns on purpose, so it has to skip itself
+EXEMPT='^(scripts/check-style\.sh)'
 FILES=$(echo "$FILES" | grep -vE "$EXEMPT" | grep -E '\.(md|py|yml|yaml|html|js|txt)$' || true)
 
 [ -z "$FILES" ] && { echo "nothing to check"; exit 0; }

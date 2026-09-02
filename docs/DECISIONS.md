@@ -17,7 +17,7 @@ answer is wrong it is usually retrieval that was wrong, not the model.
 
 ## Q4_K_M quantisation, not Q6_K
 
-Q6_K is closer to the original weights and about 3.1GB. Q4_K_M is about 2.4GB
+Q6_K is closer to the original weights and about 2.9GB. Q4_K_M is about 2.2GB
 and measurably quicker to first token on this machine.
 
 I went with Q4_K_M because the extra quality in Q6 does not show up in this kind
@@ -36,7 +36,7 @@ to be tight when retrieval is real, this is the number to raise first.
 
 `deploy/localai/models/` holds the YAML and is committed. LocalAI downloads the
 `.gguf` into the same directory, which is gitignored. Keeps the mount to one
-path and keeps a 2.4GB file out of git.
+path and keeps a 2.2GB file out of git.
 
 ## The healthcheck runs a real inference
 
@@ -99,3 +99,28 @@ keeps memory flat while still filling the CPU.
 Empty strings are rejected across the whole list rather than skipped. Silently
 dropping one would misalign the returned vectors with the chunks that were sent,
 which is the sort of bug that only shows up as bad search results weeks later.
+
+## One collection, not one per document
+
+A collection per document is tempting: deleting a document is a single drop, and
+searching one document needs no filter at all.
+
+It falls apart everywhere else. Asking a question across the whole corpus means
+querying every collection and merging the scores yourself, which is exactly the
+work the vector store exists to do. Qdrant also holds an index per collection,
+so a few hundred documents becomes a few hundred indexes.
+
+So: one collection called `docs`, with `doc_id` in the payload and a keyword
+index on it. Searching one document is a filter, searching everything is the
+default, and deleting a document is a delete by filter rather than a drop. The
+filter costs a little, and without the index it would cost a lot more, which is
+why the index goes in at creation rather than being added when it starts to
+hurt.
+
+## Cosine, not dot product
+
+The embeddings come back normalised, so cosine and dot product rank identically
+and there is no measurable difference today. Cosine is still what the collection
+is configured with, because it says what is meant. If a future model returns
+unnormalised vectors, dot product would silently start ranking by length as well
+as direction, and nothing would look broken.
