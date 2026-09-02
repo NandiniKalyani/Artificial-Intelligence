@@ -15,7 +15,7 @@ else
 	FILES=$(git ls-files)
 fi
 
-FILES=$(echo "$FILES" | grep -vE '^(_private/|scripts/check-secrets\.sh)' || true)
+FILES=$(echo "$FILES" | grep -vE '^(scripts/check-secrets\.sh)' || true)
 [ -z "$FILES" ] && { echo "nothing to scan"; exit 0; }
 
 FAIL=0

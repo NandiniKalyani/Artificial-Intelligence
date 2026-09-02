@@ -1,14 +1,4 @@
 # ---------------------------------------------------------------------------
-# Everything private lives in one folder. If it is in _private, it never
-# reaches GitHub. Reference course code, interview prep, build plan, notes.
-# ---------------------------------------------------------------------------
-_private/
-
-# Process files that would reveal how the repo was built
-CLAUDE.md
-.claude/
-
-# ---------------------------------------------------------------------------
 # Secrets. Nothing below this line should ever exist in a commit.
 # ---------------------------------------------------------------------------
 .env
