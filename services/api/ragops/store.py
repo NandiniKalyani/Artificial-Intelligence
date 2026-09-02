@@ -6,9 +6,18 @@
 
 import argparse
 import sys
+import uuid
 
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, PayloadSchemaType, VectorParams
+from qdrant_client.models import (
+    Distance,
+    FieldCondition,
+    Filter,
+    MatchValue,
+    PayloadSchemaType,
+    PointStruct,
+    VectorParams,
+)
 
 from . import config
 
@@ -50,6 +59,53 @@ def describe(qdrant=None, name=None):
         "size": params.size,
         "distance": params.distance.name.lower(),
     }
+
+
+def upsert(texts, vectors, doc_id, qdrant=None, name=None):
+    """Store passages with their text kept alongside the vector.
+
+    Qdrant does not give the text back on its own, only ids and scores, and a
+    search result with no text in it is useless for debugging retrieval.
+    """
+    qdrant = qdrant or client()
+    name = name or config.COLLECTION
+
+    points = [
+        PointStruct(
+            # uuid5 off the doc id and position, so re-ingesting a document
+            # overwrites its chunks instead of doubling them
+            id=str(uuid.uuid5(uuid.NAMESPACE_URL, f"{doc_id}:{i}")),
+            vector=vector,
+            payload={"doc_id": doc_id, "chunk": i, "text": text},
+        )
+        for i, (text, vector) in enumerate(zip(texts, vectors))
+    ]
+    qdrant.upsert(collection_name=name, points=points, wait=True)
+    return len(points)
+
+
+def search(vector, limit=3, doc_id=None, qdrant=None, name=None):
+    qdrant = qdrant or client()
+    name = name or config.COLLECTION
+
+    query_filter = None
+    if doc_id:
+        query_filter = Filter(
+            must=[FieldCondition(key="doc_id", match=MatchValue(value=doc_id))]
+        )
+
+    hits = qdrant.query_points(
+        collection_name=name,
+        query=vector,
+        limit=limit,
+        query_filter=query_filter,
+        with_payload=True,
+    ).points
+
+    return [
+        {"score": h.score, "text": h.payload["text"], "doc_id": h.payload["doc_id"]}
+        for h in hits
+    ]
 
 
 def main(argv=None):
