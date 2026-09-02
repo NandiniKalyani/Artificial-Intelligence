@@ -17,7 +17,7 @@ answer is wrong it is usually retrieval that was wrong, not the model.
 
 ## Q4_K_M quantisation, not Q6_K
 
-Q6_K is closer to the original weights and about 3.1GB. Q4_K_M is about 2.4GB
+Q6_K is closer to the original weights and about 2.9GB. Q4_K_M is about 2.2GB
 and measurably quicker to first token on this machine.
 
 I went with Q4_K_M because the extra quality in Q6 does not show up in this kind
@@ -36,7 +36,7 @@ to be tight when retrieval is real, this is the number to raise first.
 
 `deploy/localai/models/` holds the YAML and is committed. LocalAI downloads the
 `.gguf` into the same directory, which is gitignored. Keeps the mount to one
-path and keeps a 2.4GB file out of git.
+path and keeps a 2.2GB file out of git.
 
 ## The healthcheck runs a real inference
 
