@@ -12,8 +12,22 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from sentence_transformers import SentenceTransformer
 
+def _int(name, default):
+    return int(os.getenv(name, default))
+
+
 MODEL_NAME = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
-DIMENSIONS = 384
+
+# checked against the model at startup rather than trusted. Swapping the model
+# without changing this is the mistake worth catching early, because every stored
+# vector would silently be the wrong shape
+DIMENSIONS = _int("EMBEDDING_DIMENSIONS", 384)
+
+# texts per forward pass. 32 filled the CPU here, 64 was not faster
+ENCODE_BATCH_SIZE = _int("EMBEDDING_BATCH_SIZE", 32)
+
+# a whole document in one request would hold it open with no progress reported
+MAX_TEXTS = _int("EMBEDDING_MAX_TEXTS", 256)
 
 state = {"model": None, "loaded_in": None}
 
@@ -49,10 +63,7 @@ class EmbedResponse(BaseModel):
 
 
 class BatchRequest(BaseModel):
-    # 256 is arbitrary but it has to be something. A whole document's chunks in
-    # one request would hold the event loop for a long time and give the caller
-    # no progress at all
-    texts: list[str] = Field(min_length=1, max_length=256)
+    texts: list[str] = Field(min_length=1, max_length=MAX_TEXTS)
 
 
 class BatchResponse(BaseModel):
@@ -75,7 +86,9 @@ def embed_batch(request: BatchRequest):
 
     # one encode call, not one per text. The model batches internally and that
     # is where the time goes, not in the HTTP round trip
-    vectors = model.encode(request.texts, normalize_embeddings=True, batch_size=32)
+    vectors = model.encode(
+        request.texts, normalize_embeddings=True, batch_size=ENCODE_BATCH_SIZE
+    )
     return {"embeddings": [v.tolist() for v in vectors]}
 
 
@@ -89,4 +102,10 @@ def _model():
 def health():
     if state["model"] is None:
         raise HTTPException(status_code=503, detail="model is still loading")
-    return {"status": "ok", "model": MODEL_NAME, "dimensions": DIMENSIONS, "loaded_in": state["loaded_in"]}
+    return {
+        "status": "ok",
+        "model": MODEL_NAME,
+        "dimensions": DIMENSIONS,
+        "batch_size": ENCODE_BATCH_SIZE,
+        "loaded_in": state["loaded_in"],
+    }

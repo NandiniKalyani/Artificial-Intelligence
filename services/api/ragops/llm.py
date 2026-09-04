@@ -6,12 +6,6 @@ import httpx
 
 from . import config
 
-SYSTEM_PROMPT = (
-    "You answer questions about SharePoint and Microsoft 365 administration. "
-    "Answer only from the context you are given. If the context does not cover "
-    "the question, say so rather than guessing."
-)
-
 # Phi never emits its own end token through this endpoint, so the request has to
 # carry the stops itself. See docs/DEBUG-NOTES.md
 STOP = ["<|end|>", "<|user|>", "<|system|>"]
@@ -30,7 +24,7 @@ class LLM:
         self.timeout = timeout or config.LLM_TIMEOUT
 
     def ask(self, question, context=None, history=None):
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        messages = [{"role": "system", "content": config.SYSTEM_PROMPT}]
         if history:
             messages.extend(history)
         messages.append({"role": "user", "content": _with_context(question, context)})
