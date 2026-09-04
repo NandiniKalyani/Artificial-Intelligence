@@ -156,3 +156,20 @@ leave the organisation. My label was the debatable part, not the retrieval.
 
 Six passages is too small to conclude anything. It does say the round trip works
 and gives a baseline to compare against once chunking is real.
+
+## Settings live in the environment, including the system prompt
+
+The embeddings service had its batch size, request cap and vector dimension as
+constants in the code, so tuning any of them meant an edit and a rebuild. They
+are environment variables now, passed in through compose, with the same defaults
+as before.
+
+The system prompt moved out of llm.py as well. That one is arguable, since it is
+closer to code than to configuration. It went anyway, because changing its
+wording changes the answers, and that is exactly the sort of thing worth being
+able to try three versions of without touching a file.
+
+The dimension is deliberately still checked against the model at startup rather
+than trusted. Changing the model without changing the number is the mistake to
+catch on the first request instead of discovering later, when every stored
+vector is quietly the wrong shape.
