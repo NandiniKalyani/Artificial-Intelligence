@@ -28,3 +28,12 @@ EMBEDDINGS_URL = os.getenv("EMBEDDINGS_URL", "http://localhost:8082")
 # docs/DECISIONS.md for why not one collection per document
 COLLECTION = os.getenv("QDRANT_COLLECTION", "docs")
 VECTOR_SIZE = _int("VECTOR_SIZE", 384)
+
+# kept here rather than in llm.py because changing the wording changes the
+# answers, and that is a setting worth being able to try without a code edit
+SYSTEM_PROMPT = os.getenv(
+    "SYSTEM_PROMPT",
+    "You answer questions about SharePoint and Microsoft 365 administration. "
+    "Answer only from the context you are given. If the context does not cover "
+    "the question, say so rather than guessing.",
+)
