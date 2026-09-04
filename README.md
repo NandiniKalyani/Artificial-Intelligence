@@ -88,6 +88,18 @@ python -m ragops.store --reset   # drops it and starts again
 One collection, 384 dimensions, cosine distance, with an index on `doc_id` so a
 single document can be searched without scanning everything.
 
+## Reading a PDF
+
+```
+cd services/api
+python -m ragops.pdf ../../data/sharepoint.pdf
+python -m ragops.pdf ../../data/sharepoint.pdf --page 42
+```
+
+The corpus is the SharePoint admin documentation exported from Microsoft Learn:
+1798 pages, 2.24 million characters, about 100 seconds to read end to end. Five
+pages have no extractable text and are skipped.
+
 ## Does search actually work
 
 ```

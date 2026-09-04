@@ -173,3 +173,39 @@ The dimension is deliberately still checked against the model at startup rather
 than trusted. Changing the model without changing the number is the mistake to
 catch on the first request instead of discovering later, when every stored
 vector is quietly the wrong shape.
+
+## Extraction yields pages, it does not return a document
+
+`pages()` is a generator. The alternative, returning one string for the whole
+file, is simpler to use and would have been fine on the two page test file I
+nearly used instead.
+
+The real corpus is 1798 pages and 2.24 million characters. Building that as a
+single string before chunking has even started is the kind of thing that works
+until the document gets big, and then fails in a way that looks like a chunking
+problem.
+
+Yielding also keeps the page number attached to the text, which is what makes it
+possible to tell someone which page an answer came from.
+
+## Pages with no text are skipped, not yielded empty
+
+pypdf returns an empty string for cover pages, full page diagrams and scans, with
+no error and no indication that anything is wrong. Five of the 1798 pages in the
+SharePoint export are like this.
+
+Yielding them as empty pages would push chunks of nothing into the vector store,
+where they would embed to something meaningless and could be retrieved. Skipping
+them means the page numbers in the output are not contiguous, which is the right
+trade: a gap in the numbering is visible, a chunk of nothing is not.
+
+The count is reported by `summarise()` so the number is known rather than hidden.
+If it were 500 rather than 5, that would be a scanned document and a different
+problem entirely.
+
+## Hyphenated line breaks are rejoined
+
+A line ending in a hyphen is nearly always a word split across lines by layout.
+"permis-
+sions" and "permissions" embed to different vectors, and only one of
+them matches a question about permissions.
