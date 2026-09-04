@@ -55,6 +55,11 @@ services:
       context: ../../services/embeddings
     ports:
       - "${EMBEDDINGS_PORT:-8082}:8000"
+    environment:
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
+      - EMBEDDING_DIMENSIONS=${EMBEDDING_DIMENSIONS:-384}
+      - EMBEDDING_BATCH_SIZE=${EMBEDDING_BATCH_SIZE:-32}
+      - EMBEDDING_MAX_TEXTS=${EMBEDDING_MAX_TEXTS:-256}
     healthcheck:
       # /health only reports ok once the model is loaded and has embedded
       # something, so this does not need to do the embedding itself
