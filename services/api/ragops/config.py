@@ -37,3 +37,16 @@ SYSTEM_PROMPT = os.getenv(
     "Answer only from the context you are given. If the context does not cover "
     "the question, say so rather than guessing.",
 )
+
+# MiniLM takes 256 word pieces and silently truncates past that. This corpus
+# runs at 1.24 word pieces per word, so 205 words is the ceiling. 180 leaves
+# headroom for denser text and the two special tokens
+CHUNK_WORDS = _int("CHUNK_WORDS", 180)
+
+# a sentence that straddles a boundary is otherwise only ever seen as two halves,
+# neither of which says what the whole sentence said
+CHUNK_OVERLAP_WORDS = _int("CHUNK_OVERLAP_WORDS", 30)
+
+# a page holding only "Feedback" or a heading becomes a chunk of a few words,
+# which embeds to something meaningless and can still be returned by a search
+MIN_CHUNK_WORDS = _int("MIN_CHUNK_WORDS", 20)

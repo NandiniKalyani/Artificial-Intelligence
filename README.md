@@ -100,6 +100,20 @@ The corpus is the SharePoint admin documentation exported from Microsoft Learn:
 1798 pages, 2.24 million characters, about 100 seconds to read end to end. Five
 pages have no extractable text and are skipped.
 
+## Chunking
+
+```
+cd services/api
+python -m ragops.chunk ../../data/sharepoint.pdf --show 3
+```
+
+180 words per chunk with 30 words of overlap. The size is set by the model, not
+by preference: all-MiniLM-L6-v2 reads 256 word pieces and silently discards
+anything past that, and this corpus runs at 1.24 word pieces per word, so 205
+words is the hard ceiling.
+
+The SharePoint export produces 2918 chunks from 1798 pages.
+
 ## Does search actually work
 
 ```

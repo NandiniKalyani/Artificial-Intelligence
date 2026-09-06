@@ -209,3 +209,52 @@ A line ending in a hyphen is nearly always a word split across lines by layout.
 "permis-
 sions" and "permissions" embed to different vectors, and only one of
 them matches a question about permissions.
+
+## Chunk size is 180 words, and the model chose it
+
+The number people usually reach for is somewhere between 500 and 1000 tokens.
+With this embedding model that would be wrong, and wrong invisibly.
+
+all-MiniLM-L6-v2 takes a maximum of 256 word pieces and truncates past that
+without an error. I checked what that means in practice rather than trusting the
+number: embedding an 800 token passage, then embedding the same passage with an
+extra sentence added at the end, produced vectors with a cosine similarity of
+1.0. Identical. The extra sentence had no effect because the model never read it.
+
+So a 600 token chunk with this model is really a 256 token chunk, and the rest is
+stored in the payload, returned to the reader, and never represented in the
+vector that decides whether it is found.
+
+Measured over 60 pages of the real corpus, the text runs at 1.239 word pieces per
+word. Reserving the two special tokens leaves 254, which is about 205 words. 180
+is that with headroom for denser than average text.
+
+## Overlap is 30 words
+
+A sentence that straddles a boundary is otherwise only ever seen as two halves,
+and neither half says what the sentence said. 30 words is about one long
+sentence, which is the unit being protected.
+
+It costs storage and near duplicate vectors. The alternative, no overlap, loses
+exactly the sentences that span a boundary, and there is no way to know which
+ones those were.
+
+## Chunks do not span pages
+
+In this export a page boundary is usually an article boundary. Joining the end of
+one article to the start of the next gives a vector that is a blend of two
+subjects and a good match for neither.
+
+The cost is that a genuine paragraph split across a page break becomes two
+chunks. The overlap does not help there, because the overlap is within a page.
+Worth revisiting if retrieval starts missing answers that sit at page boundaries.
+
+## Chunks under 20 words are dropped
+
+Some pages hold nothing but a heading or the word Feedback. Those became chunks
+of one to a few words, which embed to something meaningless and can still be
+returned by a search.
+
+The floor removes 52 chunks from this corpus and takes 52 pages out entirely,
+1793 down to 1741 pages contributing. That is the honest cost: those pages now
+contribute nothing. They also contained nothing worth retrieving.
