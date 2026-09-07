@@ -114,6 +114,18 @@ words is the hard ceiling.
 
 The SharePoint export produces 2918 chunks from 1798 pages.
 
+## Ingesting a document
+
+```
+cd services/api
+python -m ragops.ingest ../../data/sharepoint.pdf
+python -m ragops.ingest ../../data/sharepoint.pdf --limit 200 --doc-id trial
+```
+
+Streams: pages out one at a time, chunks batched, each batch embedded and stored
+before the next page is read. The 1798 page SharePoint export becomes 2918 chunks
+in 149 seconds, at a steady 20 chunks per second.
+
 ## Does search actually work
 
 ```
