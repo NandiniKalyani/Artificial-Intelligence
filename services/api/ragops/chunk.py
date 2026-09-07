@@ -10,16 +10,9 @@ leaving room for the two special tokens and for denser than average text.
 """
 
 import argparse
-import re
 import sys
 
 from . import config
-
-# split on sentence ends, keeping the punctuation. Not perfect with
-# abbreviations, and the failure is a chunk boundary in a slightly odd place
-# rather than lost text
-_SENTENCE = re.compile(r"(?<=[.!?])\s+")
-
 
 def chunks(pages, size=None, overlap=None):
     """Yield {text, page, chunk} for a stream of (page number, text) pairs.
@@ -44,10 +37,9 @@ def chunks(pages, size=None, overlap=None):
 
 
 def _split(text, size, overlap):
-    words = []
-    for sentence in _SENTENCE.split(text):
-        words.extend(sentence.split())
-
+    # boundaries land on word count, not sentence ends. See issue on sentence
+    # aware boundaries, this cuts mid sentence and mid numbered list
+    words = text.split()
     if not words:
         return
 
