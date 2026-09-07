@@ -156,6 +156,18 @@ There is no retrieval yet, so it is answering from the model's own weights. That
 is the next phase. This exists to prove the stack works before anything is built
 on it.
 
+## Tests
+
+```
+pip install -r services/api/requirements-dev.txt
+python -m pytest tests -q
+```
+
+Chunking arithmetic and the extraction cleanup only. No containers, no model, so
+it runs in well under a second. One test asserts that the configured chunk size
+still fits inside the embedding model's 256 word piece limit, since exceeding it
+fails silently.
+
 ## Hooks
 
 Two checks run on every commit. One blocks credentials, the other catches the

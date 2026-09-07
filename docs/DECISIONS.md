@@ -302,3 +302,20 @@ That makes the score usable as a confidence signal, which is what decides whethe
 the system answers or says the documentation does not cover the question. The
 threshold is not chosen yet, and choosing it needs the eval set rather than these
 four questions.
+
+## Tests cover the arithmetic, not the plumbing
+
+The tests are on chunking and the extraction cleanup, because those are pure
+functions with edge cases that fail quietly: the overlap step, the trailing
+fragment rule, the word floor, the page boundary rule.
+
+Nothing here tests Qdrant, the embeddings service or the model. Those need
+containers, take seconds rather than milliseconds, and mostly test that other
+people's software works. Integration tests against the running stack are worth
+having and are a separate job.
+
+One test is not about chunking at all. It asserts that the configured chunk size
+multiplied by the measured 1.24 word pieces per word stays under 254. If somebody
+raises the chunk size to a number that sounds reasonable, embeddings start losing
+their tails with nothing in any log, and this is the only thing that would say
+so.
