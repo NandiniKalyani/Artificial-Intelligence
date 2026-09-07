@@ -55,3 +55,5 @@ MIN_CHUNK_WORDS = _int("MIN_CHUNK_WORDS", 20)
 # at EMBEDDING_MAX_TEXTS, and smaller batches mean progress is reported more
 # often on a document that takes minutes
 INGEST_BATCH_SIZE = _int("INGEST_BATCH_SIZE", 128)
+
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")

@@ -319,3 +319,37 @@ multiplied by the measured 1.24 word pieces per word stays under 254. If somebod
 raises the chunk size to a number that sounds reasonable, embeddings start losing
 their tails with nothing in any log, and this is the only thing that would say
 so.
+
+## Upload returns before ingestion finishes
+
+Ingesting the SharePoint export takes 149 seconds. Doing that inside the POST
+means a client holding a connection open for two and a half minutes, a proxy
+somewhere deciding that is unreasonable, and no way to report progress.
+
+So the request does the parts that can fail fast, saving the file and opening it
+with pypdf, then returns 202 with a document id. The work happens in a background
+task and the id is polled for status.
+
+That splits validation across two places on purpose. Anything cheap enough to
+check in the request is checked there, so a bad file is rejected by the call that
+sent it. Anything expensive happens behind, where failure is reported through the
+status rather than the response code.
+
+## Document status is in memory, and that is temporary
+
+`documents` is a dict in the API process. A restart loses every record, and two
+API replicas would each know only about their own uploads.
+
+It is honest for where the project is: ingestion is something the person who
+uploaded the file waits on for a couple of minutes. It stops being honest the
+moment there is more than one replica or anyone expects history, and the fix is
+to keep the record in Qdrant alongside the chunks.
+
+## Uploaded files are kept
+
+The PDF stays in a volume after ingestion. It costs disk and it means a chunking
+change can be applied to everything already uploaded without asking anyone to
+send their document again.
+
+Given issue 35 will change every chunk boundary in the corpus, that is not
+hypothetical.

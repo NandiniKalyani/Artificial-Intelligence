@@ -114,6 +114,22 @@ words is the hard ceiling.
 
 The SharePoint export produces 2918 chunks from 1798 pages.
 
+## The API
+
+```
+make up
+curl -F "file=@data/sharepoint.pdf" http://localhost:8000/documents
+curl http://localhost:8000/documents/sharepoint-ab12cd34
+```
+
+Upload returns 202 with a document id straight away and ingestion carries on
+behind it, because the SharePoint export takes 149 seconds and no client should
+hold a POST open that long. Poll the id for progress.
+
+Anything that is not a PDF gets 415, an empty file 400, and a file that pypdf
+cannot open 400 on the request that sent it rather than failing later where the
+caller cannot see it.
+
 ## Ingesting a document
 
 ```
