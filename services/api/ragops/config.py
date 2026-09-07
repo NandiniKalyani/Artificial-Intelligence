@@ -50,3 +50,8 @@ CHUNK_OVERLAP_WORDS = _int("CHUNK_OVERLAP_WORDS", 30)
 # a page holding only "Feedback" or a heading becomes a chunk of a few words,
 # which embeds to something meaningless and can still be returned by a search
 MIN_CHUNK_WORDS = _int("MIN_CHUNK_WORDS", 20)
+
+# chunks per embed and upsert round trip. The embeddings service caps a request
+# at EMBEDDING_MAX_TEXTS, and smaller batches mean progress is reported more
+# often on a document that takes minutes
+INGEST_BATCH_SIZE = _int("INGEST_BATCH_SIZE", 128)

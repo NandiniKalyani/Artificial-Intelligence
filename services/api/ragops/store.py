@@ -84,6 +84,28 @@ def upsert(texts, vectors, doc_id, qdrant=None, name=None):
     return len(points)
 
 
+def upsert_chunks(pieces, vectors, doc_id, qdrant=None, name=None):
+    """Upsert chunks that carry their own page and chunk index."""
+    qdrant = qdrant or client()
+    name = name or config.COLLECTION
+
+    points = [
+        PointStruct(
+            id=str(uuid.uuid5(uuid.NAMESPACE_URL, f"{doc_id}:{piece['chunk']}")),
+            vector=vector,
+            payload={
+                "doc_id": doc_id,
+                "chunk": piece["chunk"],
+                "page": piece["page"],
+                "text": piece["text"],
+            },
+        )
+        for piece, vector in zip(pieces, vectors)
+    ]
+    qdrant.upsert(collection_name=name, points=points, wait=True)
+    return len(points)
+
+
 def search(vector, limit=3, doc_id=None, qdrant=None, name=None):
     qdrant = qdrant or client()
     name = name or config.COLLECTION
@@ -103,7 +125,12 @@ def search(vector, limit=3, doc_id=None, qdrant=None, name=None):
     ).points
 
     return [
-        {"score": h.score, "text": h.payload["text"], "doc_id": h.payload["doc_id"]}
+        {
+            "score": h.score,
+            "text": h.payload["text"],
+            "doc_id": h.payload["doc_id"],
+            "page": h.payload.get("page"),
+        }
         for h in hits
     ]
 

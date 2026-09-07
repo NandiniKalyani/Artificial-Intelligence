@@ -258,3 +258,47 @@ returned by a search.
 The floor removes 52 chunks from this corpus and takes 52 pages out entirely,
 1793 down to 1741 pages contributing. That is the honest cost: those pages now
 contribute nothing. They also contained nothing worth retrieving.
+
+## Ingestion streams rather than collecting
+
+Pages are yielded, chunks are batched at 128, and each batch is embedded and
+upserted before the next page is read. Nothing holds the document.
+
+The simpler version, chunk everything then embed everything then upsert, would
+have worked on this corpus. It also puts 2.24 million characters and 2918 vectors
+in memory at once, and the first document big enough to break it would fail in
+the embedding step, which is not where the mistake was made.
+
+Upserting as it goes also means a crash at chunk 2000 leaves 2000 chunks
+searchable rather than losing everything.
+
+## What ingestion actually costs
+
+2918 chunks in 148.8 seconds, about 20 chunks per second, on four CPU cores. The
+rate was 20.3 at the start and 19.6 at the end, so it does not degrade as the
+collection fills.
+
+Nearly all of that time is embedding. It happens once per document, not per
+query, which is why 149 seconds is acceptable and why the batch endpoint mattered
+enough to be its own issue.
+
+## Search scores cluster when nothing matches
+
+First real retrieval over the whole corpus, four questions:
+
+| Question | Top score | Correct |
+| --- | --- | --- |
+| who can restore a document deleted from the recycle bin | 0.665 | yes |
+| how do I make sure documents are described the same way | 0.545 | not first, correct at 3 |
+| why can this person still see the file after I removed them | 0.454 | no |
+| how do I stop staff sending documents outside the company | 0.438 | no |
+
+The useful part is the shape. The good answer scored 0.665 and the three bad ones
+all sat between 0.43 and 0.45, with their own top three results within 0.02 of
+each other. A flat cluster of mediocre scores is what "nothing in the corpus
+matched" looks like.
+
+That makes the score usable as a confidence signal, which is what decides whether
+the system answers or says the documentation does not cover the question. The
+threshold is not chosen yet, and choosing it needs the eval set rather than these
+four questions.
