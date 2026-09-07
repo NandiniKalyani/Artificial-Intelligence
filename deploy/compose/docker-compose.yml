@@ -70,8 +70,35 @@ services:
       start_period: 2m
       start_interval: 5s
 
-  # api:          issue 16, ingestion and chat
+  api:
+    build:
+      context: ../../services/api
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      - QDRANT_URL=http://qdrant:6333
+      - EMBEDDINGS_URL=http://embeddings:8000
+      - LOCALAI_URL=http://localai:8080/v1
+      - UPLOAD_DIR=/data/uploads
+    volumes:
+      - api_uploads:/data/uploads
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      embeddings:
+        condition: service_healthy
+    healthcheck:
+      # /health asks qdrant for the collection, so healthy means it can reach
+      # what it depends on rather than that uvicorn started
+      test: ["CMD-SHELL", "python -c \"import urllib.request;urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 1m
   # frontend:     issue 23, chat UI
 
 volumes:
   qdrant_storage:
+  # uploaded pdfs, kept so a document can be re-ingested after a chunking change
+  # without asking whoever sent it to send it again
+  api_uploads:
