@@ -48,6 +48,99 @@ def ensure_collection(qdrant=None, name=None):
     return True
 
 
+def list_documents(qdrant=None, name=None):
+    """Every document actually in the collection, with its chunk and page counts.
+
+    Reads the payloads and counts in python. Qdrant has no group by, and at a few
+    thousand points this is milliseconds. It stops being the right answer
+    somewhere in the hundreds of thousands, and the fix then is to keep a
+    document record rather than deriving it from the chunks.
+    """
+    qdrant = qdrant or client()
+    name = name or config.COLLECTION
+
+    documents = {}
+    offset = None
+    while True:
+        points, offset = qdrant.scroll(
+            collection_name=name,
+            limit=1000,
+            offset=offset,
+            with_payload=["doc_id", "page"],
+            with_vectors=False,
+        )
+        for point in points:
+            doc_id = point.payload.get("doc_id", "unknown")
+            record = documents.setdefault(doc_id, {"doc_id": doc_id, "chunks": 0, "pages": set()})
+            record["chunks"] += 1
+            if point.payload.get("page") is not None:
+                record["pages"].add(point.payload["page"])
+        if offset is None:
+            break
+
+    return sorted(
+        (
+            {
+                "doc_id": r["doc_id"],
+                "chunks": r["chunks"],
+                "pages": len(r["pages"]),
+                "first_page": min(r["pages"]) if r["pages"] else None,
+                "last_page": max(r["pages"]) if r["pages"] else None,
+            }
+            for r in documents.values()
+        ),
+        key=lambda r: r["doc_id"],
+    )
+
+
+def get_chunks(doc_id, page=None, limit=20, offset=0, qdrant=None, name=None):
+    """Chunks for one document, in order, optionally from one page.
+
+    Ordered by the chunk index rather than by whatever qdrant returns, because
+    reading two chunks out of order while debugging a bad retrieval is worse
+    than useless.
+    """
+    qdrant = qdrant or client()
+    name = name or config.COLLECTION
+
+    must = [FieldCondition(key="doc_id", match=MatchValue(value=doc_id))]
+    if page is not None:
+        must.append(FieldCondition(key="page", match=MatchValue(value=page)))
+
+    found = []
+    scroll_offset = None
+    while True:
+        points, scroll_offset = qdrant.scroll(
+            collection_name=name,
+            scroll_filter=Filter(must=must),
+            limit=1000,
+            offset=scroll_offset,
+            with_payload=True,
+            with_vectors=False,
+        )
+        found.extend(points)
+        if scroll_offset is None:
+            break
+
+    found.sort(key=lambda p: p.payload.get("chunk", 0))
+    window = found[offset : offset + limit]
+
+    return {
+        "doc_id": doc_id,
+        "total": len(found),
+        "returned": len(window),
+        "chunks": [
+            {
+                "chunk": p.payload.get("chunk"),
+                "page": p.payload.get("page"),
+                "words": len(p.payload.get("text", "").split()),
+                "text": p.payload.get("text", ""),
+            }
+            for p in window
+        ],
+    }
+
+
 def describe(qdrant=None, name=None):
     qdrant = qdrant or client()
     name = name or config.COLLECTION

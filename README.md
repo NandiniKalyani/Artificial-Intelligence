@@ -130,6 +130,19 @@ Anything that is not a PDF gets 415, an empty file 400, and a file that pypdf
 cannot open 400 on the request that sent it rather than failing later where the
 caller cannot see it.
 
+## Looking at what is stored
+
+```
+curl http://localhost:8000/documents
+curl "http://localhost:8000/documents/sharepoint/chunks?limit=2"
+curl "http://localhost:8000/documents/sharepoint/chunks?page=932"
+```
+
+The list comes from Qdrant rather than from anything the API remembers, so a
+document ingested from the command line or uploaded before a restart still shows
+up. The chunk endpoint is what I use when a search returns something odd and I
+want to read the source text it came from.
+
 ## Ingesting a document
 
 ```

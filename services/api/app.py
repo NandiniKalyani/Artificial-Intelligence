@@ -60,11 +60,44 @@ def upload(file: UploadFile, background: BackgroundTasks):
     return documents[doc_id]
 
 
+@app.get("/documents")
+def list_documents():
+    """What is really in the collection, not what this process remembers.
+
+    The status dict only knows about uploads this process handled, and a restart
+    empties it. Qdrant knows what is actually searchable, so the list comes from
+    there and the upload record is merged on top when there is one.
+    """
+    listed = []
+    for record in store.list_documents():
+        known = documents.get(record["doc_id"], {})
+        listed.append({**record, "status": known.get("status", "ingested"), "filename": known.get("filename")})
+    return {"documents": listed}
+
+
 @app.get("/documents/{doc_id}")
 def status(doc_id: str):
-    if doc_id not in documents:
-        raise HTTPException(status_code=404, detail="no such document")
-    return documents[doc_id]
+    if doc_id in documents:
+        return documents[doc_id]
+
+    # uploaded before a restart, or ingested from the command line. It is still
+    # searchable, so a 404 would be a lie
+    for record in store.list_documents():
+        if record["doc_id"] == doc_id:
+            return {**record, "status": "ingested"}
+
+    raise HTTPException(status_code=404, detail="no such document")
+
+
+@app.get("/documents/{doc_id}/chunks")
+def chunks(doc_id: str, page: int = None, limit: int = 20, offset: int = 0):
+    if limit > 100:
+        raise HTTPException(status_code=400, detail="limit is capped at 100")
+
+    result = store.get_chunks(doc_id, page=page, limit=limit, offset=offset)
+    if result["total"] == 0:
+        raise HTTPException(status_code=404, detail="no chunks for that document or page")
+    return result
 
 
 @app.get("/health")
