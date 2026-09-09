@@ -353,3 +353,33 @@ send their document again.
 
 Given issue 35 will change every chunk boundary in the corpus, that is not
 hypothetical.
+
+## The document list is derived from the chunks
+
+There is no document table. `GET /documents` scrolls the payloads in Qdrant and
+counts chunks and pages per doc_id in python.
+
+Two reasons. The upload status dict lives in the API process, so it is empty
+after a restart and knows nothing about anything ingested from the command line.
+And a separate document record is a second source of truth that can disagree with
+the chunks, which is the kind of disagreement nobody notices until a document
+appears in a list and returns nothing.
+
+The cost is that listing reads every payload. At 2952 points it is milliseconds.
+Somewhere in the hundreds of thousands it stops being reasonable, and the answer
+then is a document record kept in the same store, written as part of the same
+ingestion, rather than a table in something else.
+
+## Chunks come back ordered by index
+
+Qdrant returns points in whatever order it likes. Reading chunk 40 followed by
+chunk 12 while trying to work out why a retrieval was wrong is worse than
+useless, so the endpoint sorts by the chunk index before returning.
+
+## Status falls back to the collection
+
+`GET /documents/{id}` used to 404 for anything not in the status dict. That
+included documents ingested from the command line and anything uploaded before
+the last restart, all of which are perfectly searchable. Returning 404 for a
+document you can retrieve chunks from is a lie, so it now falls back to what
+Qdrant knows and reports the status as ingested.
