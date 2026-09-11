@@ -383,3 +383,32 @@ included documents ingested from the command line and anything uploaded before
 the last restart, all of which are perfectly searchable. Returning 404 for a
 document you can retrieve chunks from is a lie, so it now falls back to what
 Qdrant knows and reports the status as ingested.
+
+## Search returns the spread, not just the scores
+
+Every hit carries its score, and the response also reports the top score and
+the spread between the highest and lowest in the set.
+
+Measured on the real corpus with k of 5: a question the documentation answers
+scored 0.665 at the top with a spread of 0.109, the scores falling away below
+the winner. A question it does not answer scored 0.438 with a spread of 0.011,
+five results within a hundredth of each other.
+
+That flat band is what "nothing matched" looks like, and spread captures it in
+one number. It is what the chat endpoint will use to decide between answering
+and saying the documentation does not cover the question. No threshold is chosen
+yet. Choosing one from two questions would be fitting to the questions, and it
+waits for the eval set.
+
+## k is a parameter with a default of 3 and a cap of 20
+
+Three is the number I used in the round trip and it is a guess. The eval set
+decides the real value, and until then it has to be changeable without a rebuild.
+The cap is there because every hit carries its full text, and k of 500 is a
+request for the whole corpus.
+
+## Search takes about 60 to 80 milliseconds
+
+Nearly all of it is embedding the question. Qdrant over 2952 points is
+negligible. Worth writing down now, because when the chat endpoint takes 15
+seconds, this number says the time is in generation, not retrieval.
