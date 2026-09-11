@@ -412,3 +412,45 @@ request for the whole corpus.
 Nearly all of it is embedding the question. Qdrant over 2952 points is
 negligible. Worth writing down now, because when the chat endpoint takes 15
 seconds, this number says the time is in generation, not retrieval.
+
+## Below the threshold, the answer is no
+
+If the top search score is under `ANSWER_MIN_SCORE` the endpoint returns "the
+documentation I have does not appear to cover this" without calling the model.
+
+A confident answer in that case would be the model's training data presented as
+if it came from the documents. For admin documentation that is worse than
+nothing: it reads as authoritative and nobody can check it. Saying no is the
+correct output, and it also costs nothing, where a wrong answer costs two
+minutes of CPU.
+
+The threshold is 0.5 and it is provisional. It sits between the one good match
+measured, 0.665, and the flat band of failures at 0.44. It came from two
+questions, and the eval set will move it.
+
+## Chunks are dropped whole, never truncated
+
+The context budget is spent in score order, and the first chunk that does not
+fit is dropped along with everything below it. A chunk is either wholly in the
+prompt or not there.
+
+Half a chunk is the thing most likely to produce a confident wrong answer,
+because it can end mid procedure and the model will finish the procedure from
+memory. Fewer whole chunks is safer than more partial ones.
+
+## The context budget is time, not tokens
+
+I set it up as a word budget against the 4096 token window, and that turned out
+to be the wrong constraint. Five chunks is 942 tokens, a quarter of the window,
+and takes 147 seconds because this CPU processes prompt at about 7 tokens a
+second. See DEBUG-NOTES.md. The budget stays as a hard limit against the window,
+but k is what actually decides how long an answer takes, and the right k is as
+much about patience as retrieval quality.
+
+## Sources come from retrieval, not from the model
+
+The response lists the pages that went into the prompt, taken from the search
+hits. The model is asked to say which page it used, and it mostly does not,
+saying "in the provided context" instead. That is fine. The retrieval knows
+exactly which pages were used, and trusting the model to report its own sources
+would be trusting it about the one thing it is worst at.
