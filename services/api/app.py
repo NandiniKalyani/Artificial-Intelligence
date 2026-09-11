@@ -12,7 +12,10 @@ from pathlib import Path
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException, UploadFile
 
-from ragops import config, embeddings, ingest, pdf, store
+from pydantic import BaseModel, Field
+
+from ragops import answer, config, embeddings, ingest, pdf, store
+from ragops.llm import LLMError
 
 app = FastAPI(title="ragops api")
 
@@ -136,6 +139,22 @@ def search(q: str, k: int = None, doc_id: str = None, min_score: float = None):
         "spread": round(max(scores) - min(scores), 3) if len(scores) > 1 else None,
         "seconds": round(time.monotonic() - started, 3),
     }
+
+
+class AskRequest(BaseModel):
+    question: str = Field(min_length=1)
+    k: int = Field(default=None, ge=1, le=20)
+    doc_id: str = None
+
+
+@app.post("/ask")
+def ask(request: AskRequest):
+    try:
+        return answer.ask(request.question.strip(), k=request.k, doc_id=request.doc_id)
+    except embeddings.EmbeddingsError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except LLMError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @app.get("/health")

@@ -24,6 +24,11 @@ class LLM:
         self.timeout = timeout or config.LLM_TIMEOUT
 
     def ask(self, question, context=None, history=None):
+        return self.ask_with_usage(question, context, history)[0]
+
+    def ask_with_usage(self, question, context=None, history=None):
+        """Answer plus the usage block, because prompt_tokens is the only way
+        to know what the context budget actually costs."""
         messages = [{"role": "system", "content": config.SYSTEM_PROMPT}]
         if history:
             messages.extend(history)
@@ -49,7 +54,8 @@ class LLM:
         except httpx.HTTPError as exc:
             raise LLMError(f"call to {self.url} failed: {exc}") from exc
 
-        return _clean(_first_choice(response.json()))
+        body = response.json()
+        return _clean(_first_choice(body)), body.get("usage", {})
 
     def ready(self):
         try:
