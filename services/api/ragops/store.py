@@ -199,9 +199,10 @@ def upsert_chunks(pieces, vectors, doc_id, qdrant=None, name=None):
     return len(points)
 
 
-def search(vector, limit=3, doc_id=None, qdrant=None, name=None):
+def search(vector, limit=None, doc_id=None, min_score=None, qdrant=None, name=None):
     qdrant = qdrant or client()
     name = name or config.COLLECTION
+    limit = limit or config.SEARCH_K
 
     query_filter = None
     if doc_id:
@@ -214,6 +215,7 @@ def search(vector, limit=3, doc_id=None, qdrant=None, name=None):
         query=vector,
         limit=limit,
         query_filter=query_filter,
+        score_threshold=min_score,
         with_payload=True,
     ).points
 
@@ -223,6 +225,7 @@ def search(vector, limit=3, doc_id=None, qdrant=None, name=None):
             "text": h.payload["text"],
             "doc_id": h.payload["doc_id"],
             "page": h.payload.get("page"),
+            "chunk": h.payload.get("chunk"),
         }
         for h in hits
     ]

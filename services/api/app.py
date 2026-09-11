@@ -100,6 +100,44 @@ def chunks(doc_id: str, page: int = None, limit: int = 20, offset: int = 0):
     return result
 
 
+@app.get("/search")
+def search(q: str, k: int = None, doc_id: str = None, min_score: float = None):
+    """Nearest chunks to a question, with their scores.
+
+    The scores are the point. On this corpus a good match scored 0.665 and
+    every failed search sat in a flat band between 0.43 and 0.45, so a caller
+    can tell "found it" from "nothing matched" without knowing the answer.
+    """
+    q = q.strip()
+    if not q:
+        raise HTTPException(status_code=400, detail="q is empty")
+
+    k = k or config.SEARCH_K
+    if k < 1 or k > config.SEARCH_MAX_K:
+        raise HTTPException(status_code=400, detail=f"k must be between 1 and {config.SEARCH_MAX_K}")
+
+    started = time.monotonic()
+    try:
+        vector = embeddings.embed(q)
+    except embeddings.EmbeddingsError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    hits = store.search(vector, limit=k, doc_id=doc_id, min_score=min_score)
+    scores = [h["score"] for h in hits]
+
+    return {
+        "q": q,
+        "k": k,
+        "hits": hits,
+        # top and spread together are what say whether anything matched: a high
+        # top with a wide spread is a clear winner, a low top with a narrow
+        # spread is the flat band
+        "top_score": max(scores) if scores else None,
+        "spread": round(max(scores) - min(scores), 3) if len(scores) > 1 else None,
+        "seconds": round(time.monotonic() - started, 3),
+    }
+
+
 @app.get("/health")
 def health():
     collection = None

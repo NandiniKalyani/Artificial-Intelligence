@@ -57,3 +57,8 @@ MIN_CHUNK_WORDS = _int("MIN_CHUNK_WORDS", 20)
 INGEST_BATCH_SIZE = _int("INGEST_BATCH_SIZE", 128)
 
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
+
+# how many chunks a search returns by default. 3 is a guess, the eval set
+# decides the real number. The cap exists because every chunk carries its text
+SEARCH_K = _int("SEARCH_K", 3)
+SEARCH_MAX_K = _int("SEARCH_MAX_K", 20)

@@ -130,6 +130,18 @@ Anything that is not a PDF gets 415, an empty file 400, and a file that pypdf
 cannot open 400 on the request that sent it rather than failing later where the
 caller cannot see it.
 
+## Searching
+
+```
+curl "http://localhost:8000/search?q=who+can+restore+a+deleted+document&k=5"
+curl "http://localhost:8000/search?q=external+sharing&min_score=0.6"
+```
+
+Returns the nearest chunks with their scores, plus the top score and the spread
+across the results. Those two together say whether anything matched: a good
+question here scored 0.665 with a spread of 0.109, a question the corpus does
+not answer scored 0.438 with a spread of 0.011. Around 60 to 80ms a query.
+
 ## Looking at what is stored
 
 ```
