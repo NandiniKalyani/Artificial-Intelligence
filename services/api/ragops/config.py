@@ -17,9 +17,10 @@ LLM_MODEL = os.getenv("LLM_MODEL", "phi-3.5-mini")
 LLM_MAX_TOKENS = _int("LLM_MAX_TOKENS", 300)
 LLM_TEMPERATURE = _float("LLM_TEMPERATURE", 0.2)
 
-# first request after a restart loads 2.2GB off disk, so the timeout has to
-# cover that and not just generation
-LLM_TIMEOUT = _float("LLM_TIMEOUT", 180)
+# has to cover a cold load of 2.2GB and, worse, prompt processing. On this CPU
+# the model reads context at about 7 tokens a second, so five chunks is 150s
+# before a single answer token appears
+LLM_TIMEOUT = _float("LLM_TIMEOUT", 400)
 
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 EMBEDDINGS_URL = os.getenv("EMBEDDINGS_URL", "http://localhost:8082")
@@ -59,6 +60,18 @@ INGEST_BATCH_SIZE = _int("INGEST_BATCH_SIZE", 128)
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
 
 # how many chunks a search returns by default. 3 is a guess, the eval set
-# decides the real number. The cap exists because every chunk carries its text
+# decides the real number. The cap exists because every chunk carries its text.
+# For /ask, every extra chunk is about 25 seconds of prompt processing
 SEARCH_K = _int("SEARCH_K", 3)
 SEARCH_MAX_K = _int("SEARCH_MAX_K", 20)
+
+# below this top score the answer is "the documentation does not cover this"
+# rather than a guess. Provisional: it comes from two questions, 0.665 against
+# 0.438, and the eval set will move it
+ANSWER_MIN_SCORE = _float("ANSWER_MIN_SCORE", 0.5)
+
+# words of retrieved context allowed in one prompt. 4096 tokens minus the
+# answer, the system prompt and the question, at about 1.3 tokens a word, is
+# roughly 2700 words. 2000 leaves headroom, and it is measured against the
+# prompt_tokens the model reports back rather than trusted
+CONTEXT_BUDGET_WORDS = _int("CONTEXT_BUDGET_WORDS", 2000)

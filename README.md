@@ -130,6 +130,20 @@ Anything that is not a PDF gets 415, an empty file 400, and a file that pypdf
 cannot open 400 on the request that sent it rather than failing later where the
 caller cannot see it.
 
+## Asking
+
+```
+curl -X POST http://localhost:8000/ask -H "Content-Type: application/json"   -d '{"question": "who can restore a document deleted from the recycle bin", "k": 3}'
+```
+
+Searches, puts the chunks in front of the model, and returns the answer with the
+pages it came from. If the best match scores under 0.5 it says the documentation
+does not cover the question instead of guessing.
+
+Slow. About 75 seconds with three chunks and 150 with five, nearly all of it the
+model reading the context in at around 7 tokens a second on CPU. That is the
+number to fix next, not something to hide.
+
 ## Searching
 
 ```

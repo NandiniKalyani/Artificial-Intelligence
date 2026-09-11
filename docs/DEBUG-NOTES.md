@@ -44,3 +44,37 @@ only thing that can send junk back.
 
 **What it cost.** Around 90 wasted tokens per answer. On CPU that is real,
 roughly 20 seconds of generation producing nothing.
+
+## A grounded answer takes two minutes, and it is not the answering
+
+**Symptom.** The chat CLI answers in 8 to 17 seconds warm. The first /ask call
+with five retrieved chunks took 147 seconds warm, and the next one timed out at
+the 180 second limit I had set.
+
+**What I thought it was.** Generation. A longer, more careful answer from a
+grounded prompt, taking longer to produce.
+
+**What it actually was.** Reading the prompt. The answers were 90 tokens either
+way. What changed was prompt_tokens: 12 from the CLI, 429 with three chunks, 942
+with five. Three warm timings from LocalAI's own log:
+
+| prompt_tokens | seconds |
+| --- | --- |
+| 429 | 75 |
+| 537 | 100 |
+| 942 | 147 |
+
+That is about 7 tokens a second for prompt processing on this CPU. Every chunk of
+retrieved context costs roughly 25 seconds before the first answer token exists.
+
+**What I did about it.** Raised the timeout to 400 so k of 5 does not fail, kept
+the default k at 3, and wrote it up as its own issue. The fix is not in this code.
+It is somewhere in LocalAI's thread and batch settings, whether the AVX512 build
+is being used (the log says it loaded the AVX2 variant on a CPU that has
+AVX512), prompt caching, or shorter chunks. Each of those is a measurement, not a
+guess, and they belong together.
+
+**What it means for the design.** The context budget is not a token limit
+problem. 942 tokens is a quarter of the 4096 window. It is a time problem, and
+the right k is decided by how long a person will wait as much as by retrieval
+quality.
